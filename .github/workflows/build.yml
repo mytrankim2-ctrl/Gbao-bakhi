@@ -1,4 +1,3 @@
-
 name: Build Gbao APK
 on: [push]
 jobs:
@@ -13,18 +12,24 @@ jobs:
           java-version: '8'
           distribution: 'temurin'
 
+      - name: Fix SDK location for VirtualApp
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
+          echo "sdk.dir=$ANDROID_HOME" > VirtualApp-master/VirtualApp/local.properties || true
+          echo "sdk.dir=$ANDROID_HOME" > VirtualApp-master/local.properties || true
+          echo "sdk.dir=$ANDROID_HOME" > VirtualApp/local.properties || true
+          echo "sdk.dir=$ANDROID_HOME" > ./VirtualApp-master/VirtualApp/lib/local.properties || true
+          find . -name "build.gradle" -exec dirname {} \; | while read d; do echo "sdk.dir=$ANDROID_HOME" > "$d/local.properties"; done
+          echo "--- created files ---"
+          find . -name "local.properties"
+
       - name: Build APK
         run: |
-          export ANDROID_HOME=$ANDROID_SDK_ROOT
-          export ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
           GRADLE=$(find . -name gradlew | head -1)
           chmod +x $GRADLE
           DIR=$(dirname $GRADLE)
           cd $DIR
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
-        with:
-          name: Gbao-bakhi-APK
-          path: "**/app/build/outputs/apk/debug/*.apk"
