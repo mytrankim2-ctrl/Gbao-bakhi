@@ -1,35 +1,34 @@
 name: Build Gbao APK
-on: [push]
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up JDK 8
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
-          java-version: '8'
           distribution: 'temurin'
+          java-version: '17'
 
-      - name: Fix SDK location for VirtualApp
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
-          echo "sdk.dir=$ANDROID_HOME" > VirtualApp-master/VirtualApp/local.properties || true
-          echo "sdk.dir=$ANDROID_HOME" > VirtualApp-master/local.properties || true
-          echo "sdk.dir=$ANDROID_HOME" > VirtualApp/local.properties || true
-          echo "sdk.dir=$ANDROID_HOME" > ./VirtualApp-master/VirtualApp/lib/local.properties || true
-          find . -name "build.gradle" -exec dirname {} \; | while read d; do echo "sdk.dir=$ANDROID_HOME" > "$d/local.properties"; done
-          echo "--- created files ---"
-          find . -name "local.properties"
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Build APK
-        run: |
-          GRADLE=$(find . -name gradlew | head -1)
-          chmod +x $GRADLE
-          DIR=$(dirname $GRADLE)
-          cd $DIR
-          ./gradlew assembleDebug --stacktrace
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        with:
+          name: Gbao-APK
+          path: app/build/outputs/apk/debug/*.apk
